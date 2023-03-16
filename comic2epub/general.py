@@ -50,8 +50,12 @@ def convert(cfg: MyConfig):
                 if not ext in IMAGE_EXT:
                     logger.debug(f'Not a image: {img} in {chapter}, {comic}')
                 data = read_img(os.path.join(chapter_path, img))
-                epub.add_comic_page(data, ext, chapter, page, cover=False,
-                                    nav_label=(chapter if idx == 0 else None))
+                if cfg.rearrangement:
+                    epub.add_comic_page(data, ext, cover=False,
+                                        nav_label=(chapter if idx == 0 else None))
+                else:
+                    epub.add_comic_page(data, ext, chapter, page, cover=False,
+                                        nav_label=(chapter if idx == 0 else None))
         epub.save()
         logger.info(f'Converted {comic}')
 

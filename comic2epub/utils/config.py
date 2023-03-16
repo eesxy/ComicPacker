@@ -11,6 +11,7 @@ class MyConfig:
         self.view_height = cfg.getint('epub', 'VIEW_HEIGHT')
         self.view_width = cfg.getint('epub', 'VIEW_WIDTH')
         self.reading_order = cfg.get('epub', 'READING_ORDER')
+        self.rearrangement = cfg.getboolean('epub', 'REARRANGEMENT')
         # filter
         self.min_chapters = cfg.getint('filter', 'MIN_CHAPTERS')
         self.min_pages = cfg.getint('filter', 'MIN_PAGES')
