@@ -28,6 +28,7 @@ class ComicEpub:
         updated_date: str = datetime.datetime.now().isoformat(),
         view_width: int = 848,
         view_height: int = 1200,
+        reading_order: str = 'ltr',
     ):
         """
         Create a zip file as an EPUB container, which is only epub-valid after calling the save() method.
@@ -53,6 +54,7 @@ class ComicEpub:
         self.updated_date = updated_date
         self.view_width = view_width
         self.view_height = view_height
+        self.reading_order = reading_order
 
         self.manifest_images: List[Tuple[str, str, str, str]] = []
         self.manifest_xhtmls: List[Tuple[str, str]] = []
@@ -154,6 +156,7 @@ class ComicEpub:
                 updated_date=self.updated_date,
                 view_width=self.view_width,
                 view_height=self.view_height,
+                reading_order=self.reading_order,
                 manifest_images=self.manifest_images,
                 manifest_xhtmls=self.manifest_xhtmls,
                 manifest_spines=self.manifest_spines,

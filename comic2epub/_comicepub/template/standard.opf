@@ -82,7 +82,7 @@
         {% endfor %}
     </manifest>
 
-    <spine page-progression-direction="rtl">
+    <spine page-progression-direction="{{ reading_order }}">
         {% for xhtml_id in manifest_spines %}
         {% if xhtml_id == "cover" -%}
         <itemref linear="yes" idref="cover" properties="rendition:page-spread-center"/>

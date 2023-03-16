@@ -32,6 +32,7 @@ def convert(cfg: MyConfig):
             title=(comic, comic),
             view_height=cfg.view_height,
             view_width=cfg.view_width,
+            reading_order=cfg.reading_order,
         )
         comic_path = os.path.join(cfg.source_path, comic)
         # cover
