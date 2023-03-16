@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html
+    xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:epub="http://www.idpf.org/2007/ops"
+    xml:lang="zh-CN"
+>
+
+<head>
+    <meta charset="UTF-8"/>
+    <title>{{ nav_title }}</title>
+</head>
+
+<body>
+<nav epub:type="toc" id="toc">
+    <h1>{{ nav_title }}</h1>
+    <ol>
+        {% for (xhtml_id, title) in nav_items %}
+        <li><a href="xhtml/{{ xhtml_id }}.xhtml">{{ title }}</a></li>
+        {% endfor %}
+    </ol>
+</nav>
+</body>
+
+</html>

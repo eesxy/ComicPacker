@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html
+    xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:epub="http://www.idpf.org/2007/ops"
+    xml:lang="zh-CN"
+>
+
+<head>
+    <meta charset="UTF-8"/>
+    <title>{{ title }}</title>
+    <link rel="stylesheet" type="text/css" href="../style/fixed-layout-jp.css"/>
+    <meta name="viewport" content="width={{ view_width }}, height={{ view_height }}"/>
+</head>
+
+
+{% if cover %}
+<body epub:type="cover">
+{% else %}
+<body>
+{% endif %}
+
+<div class="main">
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" viewBox="0 0 {{ view_width }} {{ view_height }}">
+        <image width="{{ view_width }}" height="{{ view_height }}" xlink:href="../image/{{ page_name }}{{ image_ext }}"/>
+    </svg>
+</div>
+</body>
+
+</html>
