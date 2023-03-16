@@ -76,7 +76,7 @@ class ComicEpub:
         path = os.path.split(full_file_name)[0]
         if not os.path.exists(path):
             os.makedirs(path)
-        return zipfile.ZipFile(full_file_name, 'w')
+        return zipfile.ZipFile(full_file_name, 'w', allowZip64=True)
 
     def __close(self):
         self.epub.close()
