@@ -14,7 +14,7 @@ def convert(cfg: MyConfig):
     safe_makedirs(cfg.output_path)
     logger = setup_logger(cfg.logging_path)
 
-    # filte
+    # filter
     comic_names = os.listdir(cfg.source_path)
     filtered_comics = comic_filter(
         cfg.source_path,
@@ -45,17 +45,19 @@ def convert(cfg: MyConfig):
         # chapters
         for chapter in chapters:
             chapter_path = os.path.join(comic_path, chapter)
-            for idx, img in enumerate(natsort.os_sorted(os.listdir(chapter_path))):
+            navigation = True
+            for img in natsort.os_sorted(os.listdir(chapter_path)):
                 page, ext = os.path.splitext(img)
                 if not ext in IMAGE_EXT:
                     logger.debug(f'Not a image: {img} in {chapter}, {comic}')
                 data = read_img(os.path.join(chapter_path, img))
                 if cfg.rearrangement:
                     epub.add_comic_page(data, ext, cover=False,
-                                        nav_label=(chapter if idx == 0 else None))
+                                        nav_label=(chapter if navigation else None))
                 else:
                     epub.add_comic_page(data, ext, chapter, page, cover=False,
-                                        nav_label=(chapter if idx == 0 else None))
+                                        nav_label=(chapter if navigation else None))
+                navigation = False
         epub.save()
         logger.info(f'Converted {comic}')
 
