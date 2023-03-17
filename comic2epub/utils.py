@@ -3,6 +3,7 @@ import errno
 import logging
 import datetime
 
+
 def safe_makedirs(path):
     try:
         os.makedirs(path)
@@ -12,10 +13,9 @@ def safe_makedirs(path):
 
 
 def setup_logger(output_dir):
-    logger = logging.getLogger(__name__)
-    logger.propagate = False
+    logger = logging.getLogger('main')
     logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('[%(asctime)s][%(levelname)s]%(message)s',
+    formatter = logging.Formatter('[%(asctime)s][%(levelname)s][%(name)s]%(message)s',
                                   datefmt=r'%Y-%m-%d %H:%M:%S')
 
     dt = datetime.datetime.now()
@@ -37,4 +37,5 @@ def setup_logger(output_dir):
 def read_img(path):
     with open(path, "rb") as file:
         data = file.read()
-        return data
+        ext = os.path.splitext(path)[1]
+        return data, ext

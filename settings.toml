@@ -1,0 +1,74 @@
+[format]
+# 可选general, bcdown
+source_format = "general"
+
+[epub]
+# 没什么用, viewbox会自动适应, 且不会造成图片拉伸
+# 对于极少数不指定页面大小的阅读器可能有效
+view_height = 1680
+view_width = 1264
+# 阅读顺序: ltr: 从左向右, rtl: 从右向左
+reading_order = "ltr"
+# 是否重新组织图片
+# 如果设置为True, 打包后的epub文件会把所有图片放在item/image目录下并重新命名
+# 对于极少数阅读器, 开启此选项可能有效, 因为图片名称中可能含有空格, 加号等字符
+# 这些字符作为文件名是合法的, 但部分阅读器在渲染时可能会将这些字符视作特殊字符
+rearrangement = false
+
+[manual_split]
+### 手动指定每部漫画的章节拆分方式
+# 记录分点的文件, .toml格式, 内容形如
+# [comic0]
+# title = "example"
+# breakpoints = [1, 6, 11]
+# 其中comic0可以是任意值, 程序不会解析该值, 只需保证不重复即可
+# title是漫画的实际标题, breakpoints是各分卷第一章的order属性值(可以为浮点数, 如第10.5章)
+# (对于通用解析器, order即文件索引序号, 从1开始)
+# (对于bcdown解析器, order是实际章节序号, 可以为浮点数, 详见bcdown meta.toml)
+# 如果为空字符串, 则禁用手动拆分
+manual_split = ""
+# 对于分割后的文件, 是否用第一页代替封面
+# Notice: 启用此项会导致原封面丢失
+manual_replace_cover = true
+# 分割后的标题, 是一个format方法可解析的字符串, 可选的参数有:
+# title: 漫画原标题
+# index: 分卷的序号, 从1开始
+# first_ord: 分割后第一章的序号
+# last_ord: 分割后最后一章的序号
+# first_title: 分割后第一章的标题
+# last_title: 分割后最后一章的标题
+manual_title_format = "{title} 第{index}卷"
+
+[fixed_split]
+### 按章节数拆分漫画
+### 如果与手动拆分同时指定, 且分点描述文件包含当前漫画, 则以手动拆分方式为准
+# 每个分卷的章节数
+# 要禁用固定章节数分割, 将此项设为-1
+fixed_split = -1
+# 同 manual_replace_cover
+fixed_replace_cover = true
+# 同 manual_title_format
+fixed_title_format = "{title} 第{first_ord}-{last_ord}章"
+
+[filter]
+# 要禁用某项过滤, 将该项设为-1
+### 漫画过滤
+# 过滤章节数过少的漫画(一话短篇, 客座连载等)
+min_chapters = 3
+# 过滤页数过少的漫画(推特短漫等)
+min_pages = 5
+# 配合上一项使用, 页数过少的章节数比例高于此值将被过滤
+# 例: 某推特短漫共20话, 其中19话均只有3页, 剩余1话有10页, 按照0.9比例会被过滤
+# 例2: 某一般连载共20话, 其中10话为正篇每话约30页, 剩余10话为番外均只有4页, 按照0.9比例不会被过滤
+min_pages_ratio = 0.9
+### 章节过滤
+# 过滤页数过多的章节(单行本, 画集等)
+max_pages = 100
+
+[others]
+# 日志位置
+logging_path = "./logs"
+# 图片目录
+source_path = "./raw"
+# 输出目录
+output_path = "./epubs"

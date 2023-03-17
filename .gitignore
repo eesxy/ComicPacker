@@ -132,5 +132,5 @@ dmypy.json
 .vscode/
 *.log
 epubs/
-my*.cfg
+my*.toml
 raw/
