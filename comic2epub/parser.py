@@ -1,4 +1,6 @@
 import os
+import re
+import json
 import toml
 import natsort
 from abc import ABC, abstractmethod
@@ -22,7 +24,54 @@ class GeneralParser(BaseParser):
             if os.path.exists(os.path.join(path, 'cover' + ext)):
                 cover_path = os.path.join(path, 'cover' + ext)
                 break
-        comic = Comic(comic_title, cover_path, [])
+        comic = Comic(comic_title, [], cover_path=cover_path)
+        chapter_index = 1
+        for chapter_title in natsort.os_sorted(os.listdir(path)):
+            chapter_path = os.path.join(path, chapter_title)
+            if not os.path.isdir(chapter_path): continue
+            chapter = Chapter(chapter_index, chapter_title, [])
+            page_index = 1
+            for page_file in natsort.os_sorted(os.listdir(chapter_path)):
+                page_path = os.path.join(chapter_path, page_file)
+                page_title, ext = os.path.splitext(page_file)
+                if ext not in IMAGE_EXT: continue
+                page = Page(page_index, page_title, page_path)
+                chapter.pages.append(page)
+                page_index += 1
+            comic.chapters.append(chapter)
+            chapter_index += 1
+        return comic
+
+
+class TachiyomiParser(BaseParser):
+    @classmethod
+    def parse(cls, path):
+        cover_path = None
+        for ext in IMAGE_EXT:
+            if os.path.exists(os.path.join(path, 'cover' + ext)):
+                cover_path = os.path.join(path, 'cover' + ext)
+                break
+        comic_title = ''
+        authors = None
+        subjects = None
+        description = None
+        for file in os.listdir(path):
+            if os.path.splitext(file)[1] != '.json': continue
+            with open(os.path.join(path, file), 'r') as f:
+                js = f.read()
+                meta = json.loads(js)
+                if 'title' in meta: comic_title = meta['title']
+                if 'author' in meta: authors = re.split(r',|;', meta['author'])
+                if 'description' in meta: description = meta['description']
+                if 'genre' in meta: subjects = set(meta['genre'])
+        comic = Comic(
+            comic_title,
+            [],
+            authors=authors,
+            subjects=subjects,
+            description=description,
+            cover_path=cover_path,
+        )
         chapter_index = 1
         for chapter_title in natsort.os_sorted(os.listdir(path)):
             chapter_path = os.path.join(path, chapter_title)
@@ -50,7 +99,7 @@ class BcdownParser(BaseParser):
             if os.path.exists(os.path.join(path, 'cover' + ext)):
                 cover_path = os.path.join(path, 'cover' + ext)
                 break
-        comic = Comic(comic_meta['title'], cover_path, [])
+        comic = Comic(comic_meta['title'], [], cover_path=cover_path)
         for chapter_id in os.listdir(path):
             chapter_path = os.path.join(path, chapter_id)
             if not os.path.isdir(chapter_path): continue

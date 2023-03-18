@@ -21,8 +21,9 @@ class ComicEpub:
         filename,
         title: Tuple[str, str],
         subjects: Optional[Set[str]] = None,
-        authors: Optional[List[Tuple[str, str, str]]] = None,
+        authors: Optional[List[Tuple[str, str]]] = None,
         publisher: Optional[Tuple[str, str]] = None,
+        description: Optional[str] = None,
         epubid: str = str(uuid.uuid1()),
         language: str = "zh-CN",
         updated_date: str = datetime.datetime.now().isoformat(),
@@ -48,6 +49,7 @@ class ComicEpub:
         self.subjects = subjects
         self.authors = authors
         self.publisher = publisher
+        self.description = description
 
         self.epubid = epubid
         self.language = language
@@ -152,6 +154,7 @@ class ComicEpub:
                 subjects=self.subjects,
                 authors=self.authors,
                 publisher=self.publisher,
+                description=self.description,
                 language=self.language,
                 updated_date=self.updated_date,
                 view_width=self.view_width,

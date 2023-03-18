@@ -1,12 +1,10 @@
 import os
-import natsort
 import toml
 from typing import Dict, List
 from ._comicepub import ComicEpub
-from .const import IMAGE_EXT
 from .config import MyConfig
 from .utils import safe_makedirs, setup_logger, read_img
-from .parser import GeneralParser, BcdownParser
+from .parser import GeneralParser, TachiyomiParser, BcdownParser
 from .filter import ComicFilter, ChapterFilter
 from .split import fixed_split, manual_split
 
@@ -14,6 +12,8 @@ from .split import fixed_split, manual_split
 def convert(cfg: MyConfig):
     if cfg.source_format == 'general':
         parser = GeneralParser
+    elif cfg.source_format == 'tachiyomi':
+        parser = TachiyomiParser
     elif cfg.source_format == 'bcdown':
         parser = BcdownParser
     else:
@@ -73,12 +73,16 @@ def convert(cfg: MyConfig):
             epub = ComicEpub(
                 filename,
                 title=(comic.title, comic.title),
+                subjects=comic.subjects,
+                authors=(None if (comic.authors is None) else [(a, a) for a in comic.authors]),
+                description=comic.description,
                 view_width=cfg.view_width,
                 view_height=cfg.view_height,
                 reading_order=cfg.reading_order,
             )
-            data, ext = read_img(comic.cover_path)
-            epub.add_comic_page(data, ext, page='cover', cover=True)
+            if comic.cover_path is not None:
+                data, ext = read_img(comic.cover_path)
+                epub.add_comic_page(data, ext, page='cover', cover=True)
             for chapter in comic.chapters:
                 for index, page in enumerate(chapter.pages):
                     data, ext = read_img(page.path)

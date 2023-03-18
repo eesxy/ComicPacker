@@ -16,10 +16,10 @@
         <!-- 作者名 -->
         {% if authors is not none -%}
         {% for author in authors %}
-        <dc:creator id="creator01">{{ author[0] }}</dc:creator>
+        <dc:creator id="creator{{ loop.index }}">{{ author[0] }}</dc:creator>
 <!--        <meta refines="#creator01" property="role" scheme="marc:relators">{{ author[1] }}</meta>-->
-        <meta refines="#creator01" property="file-as">{{ author[1] }}</meta>
-        <meta refines="#creator01" property="display-seq">{{ loop.index }}</meta>
+        <meta refines="#creator{{ loop.index }}" property="file-as">{{ author[1] }}</meta>
+        <meta refines="#creator{{ loop.index }}" property="display-seq">{{ loop.index }}</meta>
         {% endfor %}
         {%- endif %}
 
@@ -34,6 +34,11 @@
         {% for subject in subjects %}
         <dc:subject>{{ subject }}</dc:subject>
         {% endfor %}
+        {%- endif %}
+
+        <!-- 简介 -->
+        {% if description is not none -%}
+        <dc:description>{{ description }}</dc:description>
         {%- endif %}
 
         <!-- 语言 -->

@@ -42,7 +42,10 @@ def fixed_split(
             first_title=chapters[0].title,
             last_title=chapters[-1].title,
         )
-        new_comic = Comic(new_title, new_cover_path, chapters)
+        new_comic = comic.copy_meta()
+        new_comic.title = new_title
+        new_comic.cover_path = new_cover_path
+        new_comic.chapters = chapters
         comic_list.append(new_comic)
     return comic_list
 
@@ -87,6 +90,9 @@ def manual_split(
             first_title=chapters[0].title,
             last_title=chapters[-1].title,
         )
-        new_comic = Comic(new_title, new_cover_path, chapters)
+        new_comic = comic.copy_meta()
+        new_comic.title = new_title
+        new_comic.cover_path = new_cover_path
+        new_comic.chapters = chapters
         comic_list.append(new_comic)
     return comic_list

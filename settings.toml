@@ -1,5 +1,5 @@
 [format]
-# 可选general, bcdown
+# 可选general, tachiyomi, bcdown
 source_format = "general"
 
 [epub]
