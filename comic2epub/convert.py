@@ -1,5 +1,6 @@
 import os
 import toml
+from tqdm import tqdm
 from typing import Dict, List
 from ._comicepub import ComicEpub
 from .config import MyConfig
@@ -7,6 +8,7 @@ from .utils import safe_makedirs, setup_logger, read_img
 from .parser import GeneralParser, TachiyomiParser, BcdownParser
 from .filter import ComicFilter, ChapterFilter
 from .split import fixed_split, manual_split
+from .image_pipeline import ImagePipeline, ThresholdCrop, DownSample
 
 
 def convert(cfg: MyConfig):
@@ -33,6 +35,13 @@ def convert(cfg: MyConfig):
         meta = toml.load(cfg.manual_split)
         for dic in meta.values():
             manual_breakpoints[dic['title']] = dic['breakpoints']
+
+    # image pipeline
+    image_pipeline = ImagePipeline(cfg.fixed_ext, cfg.jpeg_quality, cfg.png_compression)
+    if cfg.enable_crop:
+        image_pipeline.append(ThresholdCrop(cfg.crop_lower_threshold, cfg.crop_upper_threshold))
+    if cfg.enable_downsample:
+        image_pipeline.append(DownSample(cfg.screen_height, cfg.screen_width, cfg.interpolation))
 
     for comic_folder in os.listdir(cfg.source_path):
         path = os.path.join(cfg.source_path, comic_folder)
@@ -63,7 +72,7 @@ def convert(cfg: MyConfig):
             comics = [comic]
             split = False
         original_title = comic.title
-        for comic in comics:
+        for comic in tqdm(comics, desc='comics  ', position=0):
             if split:
                 filefolder = os.path.join(cfg.output_path, original_title)
                 safe_makedirs(filefolder)
@@ -82,10 +91,15 @@ def convert(cfg: MyConfig):
             )
             if comic.cover_path is not None:
                 data, ext = read_img(comic.cover_path)
+                if cfg.enable_image_pipeline:
+                    data, ext = image_pipeline(data, ext)
                 epub.add_comic_page(data, ext, page='cover', cover=True)
-            for chapter in comic.chapters:
-                for index, page in enumerate(chapter.pages):
+            for chapter in tqdm(comic.chapters, desc='chapters', position=1, leave=False):
+                for index, page in enumerate(
+                        tqdm(chapter.pages, desc='pages   ', position=2, leave=False)):
                     data, ext = read_img(page.path)
+                    if cfg.enable_image_pipeline:
+                        data, ext = image_pipeline(data, ext)
                     epub.add_comic_page(data, ext, chapter.title, page.title,
                                         nav_label=(chapter.title if index == 0 else None))
             epub.save()

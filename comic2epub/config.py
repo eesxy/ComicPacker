@@ -24,6 +24,20 @@ class MyConfig:
     min_pages: int = -1
     min_pages_ratio: float = 1.0
     max_pages: int = -1
+    # image pipeline
+    enable_image_pipeline = False
+    fixed_ext = ""
+    jpeg_quality = 95
+    png_compression = 1
+    # crop
+    enable_crop: bool = False
+    crop_lower_threshold: int = 0
+    crop_upper_threshold: int = 255
+    # downsample
+    enable_downsample = False
+    screen_height = 1680
+    screen_width = 1264
+    interpolation = "area"
     # others
     logging_path: str = './logs'
     output_path: str = './epubs'
