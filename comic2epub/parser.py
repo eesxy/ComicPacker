@@ -23,19 +23,21 @@ class GeneralParser(BaseParser):
                 cover_path = os.path.join(path, 'cover' + ext)
                 break
         comic = Comic(comic_title, cover_path, [])
-        index = 1
+        chapter_index = 1
         for chapter_title in natsort.os_sorted(os.listdir(path)):
             chapter_path = os.path.join(path, chapter_title)
             if not os.path.isdir(chapter_path): continue
-            chapter = Chapter(index, chapter_title, [])
+            chapter = Chapter(chapter_index, chapter_title, [])
+            page_index = 1
             for page_file in natsort.os_sorted(os.listdir(chapter_path)):
                 page_path = os.path.join(chapter_path, page_file)
                 page_title, ext = os.path.splitext(page_file)
                 if ext not in IMAGE_EXT: continue
-                page = Page(page_title, page_path)
+                page = Page(page_index, page_title, page_path)
                 chapter.pages.append(page)
+                page_index += 1
             comic.chapters.append(chapter)
-            index += 1
+            chapter_index += 1
         return comic
 
 
@@ -58,8 +60,7 @@ class BcdownParser(BaseParser):
                 page_file = os.path.split(page_file)[1]
                 page_path = os.path.join(chapter_path, page_file)
                 _, ext = os.path.splitext(page_file)
-                if ext not in IMAGE_EXT: continue
-                page = Page('{:04d}'.format(index), page_path)
+                page = Page(index, '{:04d}'.format(index), page_path)
                 chapter.pages.append(page)
             comic.chapters.append(chapter)
         comic.chapters.sort(key=lambda x: x.order)

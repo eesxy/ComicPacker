@@ -4,6 +4,7 @@ from typing import List, Optional
 
 @dataclass(eq=False)
 class Page:
+    order: float
     title: str
     path: str
 
