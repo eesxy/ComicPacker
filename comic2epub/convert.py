@@ -6,8 +6,8 @@ from ._comicepub import ComicEpub
 from .config import MyConfig
 from .utils import safe_makedirs, setup_logger, read_img
 from .parser import GeneralParser, TachiyomiParser, BcdownParser
-from .filter import ComicFilter, ChapterFilter
 from .split import fixed_split, manual_split
+from .comic_pipeline import ComicFilter, ChapterFilter, ImageDedup, ComicPipeline
 from .image_pipeline import ImagePipeline, ThresholdCrop, DownSample
 
 
@@ -25,9 +25,13 @@ def convert(cfg: MyConfig):
     safe_makedirs(cfg.output_path)
     logger = setup_logger(cfg.logging_path)
 
-    # filter
-    comic_filter = ComicFilter(cfg.min_chapters, cfg.min_pages, cfg.min_pages_ratio, logger)
-    chapter_filter = ChapterFilter(cfg.max_pages, logger)
+    # comic pipeline
+    comic_pipeline = ComicPipeline(
+        ComicFilter(cfg.min_chapters, cfg.min_pages, cfg.min_pages_ratio, logger),
+        ChapterFilter(cfg.max_pages, logger),
+    )
+    if cfg.enable_dedup:
+        comic_pipeline.append(ImageDedup(cfg.dedup_method, logger))
 
     # manual split
     manual_breakpoints: Dict[str, List] = {}
@@ -48,9 +52,8 @@ def convert(cfg: MyConfig):
         if not os.path.isdir(path): continue
         # parse
         comic = parser.parse(path)
-        # filter
-        if not comic_filter.filt(comic): continue
-        chapter_filter.filt(comic)
+        # comic pipeline
+        if not comic_pipeline(comic): continue
         # split
         if comic.title in manual_breakpoints:
             comics = manual_split(
@@ -72,6 +75,7 @@ def convert(cfg: MyConfig):
             comics = [comic]
             split = False
         original_title = comic.title
+        logger.info(f'Converting {original_title}')
         for comic in tqdm(comics, desc='comics  ', position=0):
             if split:
                 filefolder = os.path.join(cfg.output_path, original_title)
@@ -103,7 +107,6 @@ def convert(cfg: MyConfig):
                     epub.add_comic_page(data, ext, chapter.title, page.title,
                                         nav_label=(chapter.title if index == 0 else None))
             epub.save()
-        logger.info(f'Converted {original_title}')
 
 
 if __name__ == '__main__':

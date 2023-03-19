@@ -8,6 +8,7 @@ class Page:
     order: float
     title: str
     path: str
+    hash_code: Optional[str] = None
 
 
 @dataclass(eq=False)

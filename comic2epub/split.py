@@ -52,7 +52,7 @@ def fixed_split(
 
 def manual_split(
     comic: Comic,
-    breakpoints: List[float],
+    breakpoints: List[str],
     replace_cover: bool = False,
     title_format: str = r'{title} Volume {index}',
 ) -> List[Comic]:
@@ -71,7 +71,7 @@ def manual_split(
     chapters_list: List[List[Chapter]] = []
     chapter_list: List[Chapter] = []
     for chapter in comic.chapters:
-        if chapter.order in breakpoints and len(chapter_list) != 0:
+        if chapter.title in breakpoints and len(chapter_list) != 0:
             chapters_list.append(chapter_list)
             chapter_list = [chapter]
         else:
