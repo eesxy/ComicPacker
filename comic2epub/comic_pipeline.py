@@ -79,7 +79,7 @@ class ImageDedup(BaseFilter):
     def __call__(self, comic):
         hash_dict: Dict[str, int] = {}
         self.logger.info(f'Deduping {comic.title}')
-        for chapter in tqdm(comic.chapters, position=0, desc='chapters'):
+        for chapter in tqdm(comic.chapters, position=0, desc='chapters', leave=False):
             for page in tqdm(chapter.pages, position=1, desc='pages   ', leave=False):
                 page.hash_code = self.image_hash.encode_image(page.path)
                 if page.hash_code not in hash_dict:

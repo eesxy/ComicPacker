@@ -52,8 +52,6 @@ def convert(cfg: MyConfig):
         if not os.path.isdir(path): continue
         # parse
         comic = parser.parse(path)
-        # comic pipeline
-        if not comic_pipeline(comic): continue
         # split
         if comic.title in manual_breakpoints:
             comics = manual_split(
@@ -76,7 +74,7 @@ def convert(cfg: MyConfig):
             split = False
         original_title = comic.title
         logger.info(f'Converting {original_title}')
-        for comic in tqdm(comics, desc='comics  ', position=0):
+        for comic in comics:
             if split:
                 filefolder = os.path.join(cfg.output_path, original_title)
                 safe_makedirs(filefolder)
@@ -85,6 +83,9 @@ def convert(cfg: MyConfig):
                 filename = os.path.join(cfg.output_path, comic.title + '.epub')
             if os.path.exists(filename):
                 logger.info(f'{os.path.split(filename)[1]} exists')
+                continue
+            # comic pipeline
+            if not comic_pipeline(comic): continue
             epub = ComicEpub(
                 filename,
                 title=(comic.title, comic.title),
@@ -95,14 +96,15 @@ def convert(cfg: MyConfig):
                 view_height=cfg.view_height,
                 reading_order=cfg.reading_order,
             )
+            logger.info(f'Packing {os.path.split(filename)[1]}')
             if comic.cover_path is not None:
                 data, ext = read_img(comic.cover_path)
                 if cfg.enable_image_pipeline:
                     data, ext = image_pipeline(data, ext)
                 epub.add_comic_page(data, ext, page='cover', cover=True)
-            for chapter in tqdm(comic.chapters, desc='chapters', position=1, leave=False):
+            for chapter in tqdm(comic.chapters, desc='chapters', position=0, leave=False):
                 for index, page in enumerate(
-                        tqdm(chapter.pages, desc='pages   ', position=2, leave=False)):
+                        tqdm(chapter.pages, desc='pages   ', position=1, leave=False)):
                     data, ext = read_img(page.path)
                     if cfg.enable_image_pipeline:
                         data, ext = image_pipeline(data, ext)
