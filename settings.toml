@@ -52,6 +52,9 @@ manual_split = ""
 # Notice: 启用此项会导致原封面丢失
 manual_replace_cover = true
 
+### 是否将分割后的分卷放在单独的文件夹
+manual_separate_folder = false
+
 ### 分割后的标题, 是一个format方法可解析的字符串, 可选的参数有:
 # title: 漫画原标题
 # index: 分卷的序号, 从1开始
@@ -70,6 +73,9 @@ fixed_split = -1
 
 ### 同 manual_replace_cover
 fixed_replace_cover = true
+
+### 同 manual_separate_folder
+fixed_separate_folder = false
 
 ### 同 manual_title_format
 fixed_title_format = "{title} 第{first_ord}-{last_ord}章"

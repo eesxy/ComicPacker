@@ -18,10 +18,12 @@ class MyConfig:
     # manual split
     manual_split: str = ""
     manual_replace_cover: bool = False
+    manual_separate_folder: bool = False
     manual_title_format: str = r"{title}-{index}"
     # fixed split
     fixed_split: int = -1
     fixed_replace_cover: bool = False
+    fixed_separate_folder: bool = False
     fixed_title_format: str = r"{title}-{index}"
     # comic filter
     min_chapters: int = -1

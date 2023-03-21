@@ -62,7 +62,7 @@ def convert(cfg: MyConfig):
                 cfg.manual_replace_cover,
                 cfg.manual_title_format,
             )
-            split = True
+            split = cfg.manual_separate_folder
         elif cfg.fixed_split != -1:
             comics = fixed_split(
                 comic,
@@ -70,7 +70,7 @@ def convert(cfg: MyConfig):
                 cfg.fixed_replace_cover,
                 cfg.fixed_title_format,
             )
-            split = True
+            split = cfg.fixed_separate_folder
         else:
             comics = [comic]
             split = False
@@ -82,7 +82,9 @@ def convert(cfg: MyConfig):
                 safe_makedirs(filefolder)
                 filename = os.path.join(filefolder, comic.title + '.epub')
             else:
-                filename = os.path.join(cfg.output_path, original_title + '.epub')
+                filename = os.path.join(cfg.output_path, comic.title + '.epub')
+            if os.path.exists(filename):
+                logger.info(f'{os.path.split(filename)[1]} exists')
             epub = ComicEpub(
                 filename,
                 title=(comic.title, comic.title),
