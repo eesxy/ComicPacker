@@ -1,5 +1,6 @@
 import os
 import toml
+import natsort
 from tqdm import tqdm
 from typing import Dict, List
 from ._comicepub import ComicEpub
@@ -47,7 +48,7 @@ def convert(cfg: MyConfig):
     if cfg.enable_downsample:
         image_pipeline.append(DownSample(cfg.screen_height, cfg.screen_width, cfg.interpolation))
 
-    for comic_folder in os.listdir(cfg.source_path):
+    for comic_folder in natsort.os_sorted(os.listdir(cfg.source_path)):
         path = os.path.join(cfg.source_path, comic_folder)
         if not os.path.isdir(path): continue
         # parse
