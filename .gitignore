@@ -131,6 +131,9 @@ dmypy.json
 # myignore
 .vscode/
 *.log
-epubs/
+*.jpg
+*.jpeg
+*.png
+*.epub
+*.json
 my*.toml
-raw/
