@@ -1,3 +1,4 @@
+import logging
 import cv2
 import numpy as np
 from abc import abstractmethod
@@ -59,6 +60,7 @@ class DownSample(BaseTransformer):
 class ImagePipeline:
     def __init__(
         self,
+        logger: logging.Logger,
         fixed_ext: str = '',
         jpeg_quality: int = 95,
         png_compression: int = 1,
@@ -67,12 +69,16 @@ class ImagePipeline:
         self.fixed_ext = None if fixed_ext == '' else fixed_ext
         self.jpeg_quality = jpeg_quality
         self.png_compression = png_compression
+        self.logger = logger.getChild('ImagePipeline')
 
     def append(self, transform: BaseTransformer):
         self.transforms.append(transform)
 
     def __call__(self, data, ext):
         img = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
+        if img is None:
+            self.logger.warning('Invalid image, skip')
+            return data, ext
         for transform in self.transforms:
             img = transform(img)
         if self.fixed_ext: ext = self.fixed_ext
