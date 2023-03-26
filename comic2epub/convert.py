@@ -36,10 +36,14 @@ def convert(cfg: MyConfig):
 
     # manual split
     manual_breakpoints: Dict[str, List] = {}
+    manual_replace_cover: Dict[str, bool] = {}
     if cfg.manual_split != '':
         meta = toml.load(cfg.manual_split)
         for dic in meta.values():
             manual_breakpoints[dic['title']] = dic['breakpoints']
+            manual_replace_cover[dic['title']] = cfg.manual_replace_cover
+            if 'replace_cover' in dic:
+                manual_replace_cover[dic['title']] = dic['replace_cover']
 
     # image pipeline
     image_pipeline = ImagePipeline(cfg.fixed_ext, cfg.jpeg_quality, cfg.png_compression)
@@ -58,7 +62,7 @@ def convert(cfg: MyConfig):
             comics = manual_split(
                 comic,
                 manual_breakpoints[comic.title],
-                cfg.manual_replace_cover,
+                manual_replace_cover[comic.title],
                 cfg.manual_title_format,
             )
             split = cfg.manual_separate_folder
