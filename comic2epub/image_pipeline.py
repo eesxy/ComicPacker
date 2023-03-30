@@ -1,7 +1,11 @@
 import logging
-import cv2
+import io
 import numpy as np
+import PIL
+from PIL import Image
+from PIL.JpegImagePlugin import get_sampling
 from abc import abstractmethod
+from .utils import get_jpg_quality
 
 
 class BaseTransformer:
@@ -16,14 +20,13 @@ class ThresholdCrop(BaseTransformer):
         self.lower = lower_threshold
         self.upper = upper_threshold
 
-    def __call__(self, img):
-        if len(img.shape) == 2:
+    def __call__(self, img: Image.Image):
+        if img.mode == 'L':
             gray_img = img
-        elif img.shape[2] == 3:
-            gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        elif img.shape[2] == 4:
-            gray_img = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
-        in_threshold = (gray_img >= self.lower) & (gray_img <= self.upper)  # type: ignore
+        else:
+            gray_img = img.convert('L')
+        mat = np.array(gray_img)
+        in_threshold = (mat >= self.lower) & (mat <= self.upper)  # type: ignore
         if not np.any(in_threshold): return img
         for h0 in range(in_threshold.shape[0]):
             if np.any(in_threshold[h0, :]): break
@@ -33,27 +36,28 @@ class ThresholdCrop(BaseTransformer):
             if np.any(in_threshold[h1, :]): break
         for w1 in range(in_threshold.shape[1] - 1, -1, -1):
             if np.any(in_threshold[:, w1]): break
-        return img[h0:h1 + 1, w0:w1 + 1, ...]  # type: ignore
+        return img.crop((w0, h0, w1, h1))  # type: ignore
 
 
 class DownSample(BaseTransformer):
-    def __init__(self, screen_height: int, screen_width: int, interpolation: str = 'area') -> None:
+    def __init__(self, screen_height: int, screen_width: int, interpolation: str = 'cubic') -> None:
         self.height = screen_height
         self.width = screen_width
-        if interpolation == 'area': self.interpolation = cv2.INTER_AREA
-        elif interpolation == 'lanczos': self.interpolation = cv2.INTER_LANCZOS4
-        elif interpolation == 'nearest': self.interpolation = cv2.INTER_NEAREST
-        elif interpolation == 'linear': self.interpolation = cv2.INTER_LINEAR
-        elif interpolation == 'cubic': self.interpolation = cv2.INTER_CUBIC
+        if interpolation == 'cubic': self.interpolation = Image.Resampling.BICUBIC
+        elif interpolation == 'lanczos': self.interpolation = Image.Resampling.LANCZOS
+        elif interpolation == 'box': self.interpolation = Image.Resampling.BOX
+        elif interpolation == 'linear': self.interpolation = Image.Resampling.BILINEAR
+        elif interpolation == 'nearest': self.interpolation = Image.Resampling.NEAREST
+
         else: raise ValueError(f'Invalid interpolation {interpolation}')
 
-    def __call__(self, img):
-        if img.shape[0] > self.height or img.shape[1] > self.width:
-            scaled_height = int(img.shape[0] * self.width / img.shape[1])
-            scaled_width = int(img.shape[1] * self.height / img.shape[0])
+    def __call__(self, img: Image.Image):
+        if img.height > self.height or img.width > self.width:
+            scaled_height = int(img.height * self.width / img.width)
+            scaled_width = int(img.width * self.height / img.height)
             if scaled_height > self.height: shape = (scaled_width, self.height)
             else: shape = (self.width, scaled_height)
-            img = cv2.resize(img, shape, interpolation=self.interpolation)
+            img = img.resize(shape, resample=self.interpolation)
         return img
 
 
@@ -62,7 +66,7 @@ class ImagePipeline:
         self,
         logger: logging.Logger,
         fixed_ext: str = '',
-        jpeg_quality: int = 95,
+        jpeg_quality: int = -1,
         png_compression: int = 1,
     ) -> None:
         self.transforms = []
@@ -74,18 +78,34 @@ class ImagePipeline:
     def append(self, transform: BaseTransformer):
         self.transforms.append(transform)
 
-    def __call__(self, data, ext):
-        img = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_UNCHANGED)
-        if img is None:
+    def __call__(self, data: bytes, ext: str):
+        try:
+            img = Image.open(io.BytesIO(data))
+        except PIL.UnidentifiedImageError:
             self.logger.warning('Invalid image, skip')
             return data, ext
-        for transform in self.transforms:
-            img = transform(img)
-        if self.fixed_ext: ext = self.fixed_ext
-        _, data = cv2.imencode(ext, img, [
-            cv2.IMWRITE_JPEG_QUALITY,
-            self.jpeg_quality,
-            cv2.IMWRITE_PNG_COMPRESSION,
-            self.png_compression, ])
-        data = data.tostring()
-        return data, ext
+        ext = ext.lower()
+        if ext in ['.jpg', '.jpeg']:
+            quality = get_jpg_quality(img)
+            qtables = img.quantization  # type: ignore
+            subsampling = get_sampling(img)  # type: ignore
+            for transform in self.transforms:
+                img = transform(img)
+            new_data = io.BytesIO()
+            if self.jpeg_quality != -1 and quality > self.jpeg_quality:
+                img.save(new_data, 'JPEG', quality=self.jpeg_quality, optimize=True,
+                         subsampling=subsampling)
+            else:
+                img.save(new_data, 'JPEG', qtables=qtables, optimize=True, subsampling=subsampling)
+            return new_data.getvalue(), ext
+        elif ext in ['.png']:
+            for transform in self.transforms:
+                img = transform(img)
+            new_data = io.BytesIO()
+            if self.png_compression == -1:
+                img.save(new_data, 'PNG', optimize=True)
+            else:
+                img.save(new_data, 'PNG', compress_level=self.png_compression)
+            return new_data.getvalue(), ext
+        else:
+            raise NotImplementedError(f'Unsupported format {ext}')
