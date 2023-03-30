@@ -36,6 +36,7 @@ class ThresholdCrop(BaseTransformer):
             if np.any(in_threshold[h1, :]): break
         for w1 in range(in_threshold.shape[1] - 1, -1, -1):
             if np.any(in_threshold[:, w1]): break
+        if w0 == w1 or h0 == h1: return img  # type: ignore
         return img.crop((w0, h0, w1, h1))  # type: ignore
 
 
@@ -98,7 +99,16 @@ class ImagePipeline:
             else:
                 img.save(new_data, 'JPEG', qtables=qtables, optimize=True, subsampling=subsampling)
             return new_data.getvalue(), ext
-        elif ext in ['.png']:
+        elif self.fixed_ext == '.jpg' or self.fixed_ext == '.jpeg':
+            for transform in self.transforms:
+                img = transform(img)
+            new_data = io.BytesIO()
+            if img.mode in ['RGBA', 'LA', 'RGBa', 'La']:
+                img = img.convert('RGB')
+            quality = self.jpeg_quality if self.jpeg_quality != -1 else 100
+            img.save(new_data, 'JPEG', quality=quality, optimize=True, subsampling=0)
+            return new_data.getvalue(), ext
+        elif ext in ['.png'] or self.fixed_ext == '.png':
             for transform in self.transforms:
                 img = transform(img)
             new_data = io.BytesIO()

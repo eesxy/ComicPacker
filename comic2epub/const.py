@@ -1,1 +1,1 @@
-IMAGE_EXT = {'.jpg', '.jpeg', '.png'}
+IMAGE_EXT = {'.jpg', '.jpeg', '.png', '.JPG', '.JPEG', '.PNG'}
