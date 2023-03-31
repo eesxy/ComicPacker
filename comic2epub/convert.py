@@ -78,7 +78,6 @@ def convert(cfg: MyConfig):
             comics = [comic]
             split = False
         original_title = comic.title
-        logger.info(f'Converting {original_title}')
         for comic in comics:
             if split:
                 filefolder = os.path.join(cfg.output_path, original_title)

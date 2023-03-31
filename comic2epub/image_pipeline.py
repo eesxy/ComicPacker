@@ -82,8 +82,12 @@ class ImagePipeline:
     def __call__(self, data: bytes, ext: str):
         try:
             img = Image.open(io.BytesIO(data))
+            _ = img.getdata()
         except PIL.UnidentifiedImageError:
             self.logger.warning('Invalid image, skip')
+            return data, ext
+        except OSError:
+            self.logger.warning('Truncated image, skip')
             return data, ext
         ext = ext.lower()
         if ext in ['.jpg', '.jpeg']:
