@@ -13,6 +13,12 @@ output_path = "./epubs"
 # 可选:
 # general: 文件名或文件夹名即为漫画, 章节, 页面的标题
 # tachiyomi: 与general类似, 但漫画文件夹中应当包含一个tachiyomi格式的元数据.json文件
+#   其中各字段对应元数据:
+#   title: 漫画标题
+#   author: 作者, 多个作者以逗号或分号隔开
+#   description: 简介
+#   genre: 分类(对应epub的subject元数据)
+#   artist和status字段不使用
 # bcdown: 文件名或文件夹名可以任意命名, 由各文件夹中的.toml文件确定漫画, 章节, 页面的标题, 适配bcdown
 source_format = "general"
 
