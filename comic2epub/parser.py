@@ -6,6 +6,7 @@ import natsort
 from abc import ABC, abstractmethod
 from .const import IMAGE_EXT
 from .comic import Page, Chapter, Comic
+import logging
 
 
 class BaseParser:
@@ -119,7 +120,9 @@ class DmzjBackupParser(BaseParser):
         for chapter_title in chapter_list:
             chapter_path = os.path.join(path, chapter_title)
             if not os.path.isdir(chapter_path):
-                raise ValueError('Chapter list error')
+                logging.getLogger('main.Parser').warning(
+                    f'missing chapter {chapter_title} in {comic_title}')
+                continue
             chapter = Chapter(chapter_index, chapter_title, [])
             page_index = 1
             for page_file in natsort.os_sorted(os.listdir(chapter_path)):

@@ -18,12 +18,11 @@ class ComicFilter(BaseFilter):
         min_chapters: int,
         min_pages: int,
         min_pages_ratio: float,
-        logger: logging.Logger,
     ) -> None:
         self.min_chapters = min_chapters
         self.min_pages = min_pages
         self.min_pages_ratio = min_pages_ratio
-        self.logger = logger.getChild('Filter')
+        self.logger = logging.getLogger('main.Filter')
 
     def __call__(self, comic):
         if self.min_chapters != -1 and len(comic.chapters) < self.min_chapters:
@@ -45,10 +44,9 @@ class ChapterFilter(BaseFilter):
     def __init__(
         self,
         max_pages: int,
-        logger: logging.Logger,
     ) -> None:
         self.max_pages = max_pages
-        self.logger = logger.getChild('Filter')
+        self.logger = logging.getLogger('main.Filter')
 
     def __call__(self, comic):
         filted_chapters = []
@@ -63,7 +61,7 @@ class ChapterFilter(BaseFilter):
 
 
 class ImageDedup(BaseFilter):
-    def __init__(self, method: str, logger: logging.Logger) -> None:
+    def __init__(self, method: str) -> None:
         if method == 'phash':
             self.image_hash = PHash(verbose=False)
         elif method == 'dhash':
@@ -74,7 +72,7 @@ class ImageDedup(BaseFilter):
             self.image_hash = AHash(verbose=False)
         else:
             raise ValueError(f'Invalid hash method {method}')
-        self.logger = logger.getChild('dedup')
+        self.logger = logging.getLogger('main.Dedup')
 
     def __call__(self, comic):
         hash_dict: Dict[str, int] = {}

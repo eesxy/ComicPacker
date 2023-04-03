@@ -65,7 +65,6 @@ class DownSample(BaseTransformer):
 class ImagePipeline:
     def __init__(
         self,
-        logger: logging.Logger,
         fixed_ext: str = '',
         jpeg_quality: int = -1,
         png_compression: int = 1,
@@ -74,52 +73,80 @@ class ImagePipeline:
         self.fixed_ext = None if fixed_ext == '' else fixed_ext
         self.jpeg_quality = jpeg_quality
         self.png_compression = png_compression
-        self.logger = logger.getChild('ImagePipeline')
 
     def append(self, transform: BaseTransformer):
         self.transforms.append(transform)
+
+    def transform(self, img: Image.Image):
+        for transform in self.transforms:
+            try:
+                img = transform(img)
+            except UserWarning as e:
+                raise UserWarning(e)
+        return img
+
+    def convert(self, img: Image.Image):
+        if img.mode in ['RGBA', 'RGBa', 'P']:
+            img = img.convert('RGB')
+        elif img.mode in ['LA', 'La']:
+            img = img.convert('L')
+        elif img.mode not in ['RGB', 'L']:
+            raise UserWarning(f'Unrecognizable color space {img.mode}')
+        return img
+
+    def save_png(self, img: Image.Image):
+        new_data = io.BytesIO()
+        if self.png_compression == -1:
+            img.save(new_data, 'PNG', optimize=True)
+        else:
+            img.save(new_data, 'PNG', compress_level=self.png_compression)
+        return new_data.getvalue(), '.png'
+
+    def save_jpeg_fixed(self, img: Image.Image):
+        new_data = io.BytesIO()
+        quality = self.jpeg_quality if self.jpeg_quality != -1 else 100
+        img.save(new_data, 'JPEG', quality=quality, optimize=True, subsampling=0)
+        return new_data.getvalue(), '.jpg'
+
+    def save_jpeg(self, img: Image.Image, quality: int, qtables, subsampling: int):
+        new_data = io.BytesIO()
+        if self.jpeg_quality != -1 and quality > self.jpeg_quality:
+            img.save(new_data, 'JPEG', quality=self.jpeg_quality, optimize=True,
+                     subsampling=subsampling)
+        else:
+            img.save(new_data, 'JPEG', qtables=qtables, optimize=True, subsampling=subsampling)
+        return new_data.getvalue(), '.jpg'
 
     def __call__(self, data: bytes, ext: str):
         try:
             img = Image.open(io.BytesIO(data))
             _ = img.getdata()
         except PIL.UnidentifiedImageError:
-            self.logger.warning('Invalid image, skip')
-            return data, ext
+            raise UserWarning('Invalid image')
         except OSError:
-            self.logger.warning('Truncated image, skip')
-            return data, ext
+            raise UserWarning('Truncated image')
         ext = ext.lower()
-        if ext in ['.jpg', '.jpeg']:
-            quality = get_jpg_quality(img)
-            qtables = img.quantization  # type: ignore
-            subsampling = get_sampling(img)  # type: ignore
-            for transform in self.transforms:
-                img = transform(img)
-            new_data = io.BytesIO()
-            if self.jpeg_quality != -1 and quality > self.jpeg_quality:
-                img.save(new_data, 'JPEG', quality=self.jpeg_quality, optimize=True,
-                         subsampling=subsampling)
+        try:
+            if ext in ['.jpg', '.jpeg']:
+                try:
+                    qtables = img.quantization  # type: ignore
+                except AttributeError:
+                    img = self.transform(img)
+                    img = self.convert(img)
+                    return self.save_jpeg_fixed(img)
+                quality = get_jpg_quality(qtables)
+                subsampling = get_sampling(img)  # type: ignore
+                img = self.transform(img)
+                img = self.convert(img)
+                return self.save_jpeg(img, quality, qtables, subsampling)
+            elif self.fixed_ext == '.jpg' or self.fixed_ext == '.jpeg':
+                img = self.transform(img)
+                img = self.convert(img)
+                return self.save_jpeg_fixed(img)
+            elif ext in ['.png'] or self.fixed_ext == '.png':
+                img = self.transform(img)
+                return self.save_png(img)
             else:
-                img.save(new_data, 'JPEG', qtables=qtables, optimize=True, subsampling=subsampling)
-            return new_data.getvalue(), ext
-        elif self.fixed_ext == '.jpg' or self.fixed_ext == '.jpeg':
-            for transform in self.transforms:
-                img = transform(img)
-            new_data = io.BytesIO()
-            if img.mode in ['RGBA', 'LA', 'RGBa', 'La']:
-                img = img.convert('RGB')
-            quality = self.jpeg_quality if self.jpeg_quality != -1 else 100
-            img.save(new_data, 'JPEG', quality=quality, optimize=True, subsampling=0)
-            return new_data.getvalue(), ext
-        elif ext in ['.png'] or self.fixed_ext == '.png':
-            for transform in self.transforms:
-                img = transform(img)
-            new_data = io.BytesIO()
-            if self.png_compression == -1:
-                img.save(new_data, 'PNG', optimize=True)
-            else:
-                img.save(new_data, 'PNG', compress_level=self.png_compression)
-            return new_data.getvalue(), ext
-        else:
-            raise NotImplementedError(f'Unsupported format {ext}')
+                raise NotImplementedError(f'Unsupported format {ext}')
+        except UserWarning as e:
+            raise UserWarning(e)

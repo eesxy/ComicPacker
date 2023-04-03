@@ -30,11 +30,11 @@ def convert(cfg: MyConfig):
 
     # comic pipeline
     comic_pipeline = ComicPipeline(
-        ComicFilter(cfg.min_chapters, cfg.min_pages, cfg.min_pages_ratio, logger),
-        ChapterFilter(cfg.max_pages, logger),
+        ComicFilter(cfg.min_chapters, cfg.min_pages, cfg.min_pages_ratio),
+        ChapterFilter(cfg.max_pages),
     )
     if cfg.enable_dedup:
-        comic_pipeline.append(ImageDedup(cfg.dedup_method, logger))
+        comic_pipeline.append(ImageDedup(cfg.dedup_method))
 
     # manual split
     manual_breakpoints: Dict[str, List] = {}
@@ -48,7 +48,7 @@ def convert(cfg: MyConfig):
                 manual_replace_cover[dic['title']] = dic['replace_cover']
 
     # image pipeline
-    image_pipeline = ImagePipeline(logger, cfg.fixed_ext, cfg.jpeg_quality, cfg.png_compression)
+    image_pipeline = ImagePipeline(cfg.fixed_ext, cfg.jpeg_quality, cfg.png_compression)
     if cfg.enable_crop:
         image_pipeline.append(ThresholdCrop(cfg.crop_lower_threshold, cfg.crop_upper_threshold))
     if cfg.enable_downsample:
@@ -106,16 +106,23 @@ def convert(cfg: MyConfig):
             if comic.cover_path is not None:
                 data, ext = read_img(comic.cover_path)
                 if cfg.enable_image_pipeline:
-                    data, ext = image_pipeline(data, ext)
-                epub.add_comic_page(data, ext, page='cover', cover=True)
+                    try:
+                        data, ext = image_pipeline(data, ext)
+                        epub.add_comic_page(data, ext, page='cover', cover=True)
+                    except UserWarning as e:
+                        logger.warning(str(e) + f': cover in {comic.title}')
             for chapter in tqdm(comic.chapters, desc='chapters', position=0, leave=False):
                 for index, page in enumerate(
                         tqdm(chapter.pages, desc='pages   ', position=1, leave=False)):
                     data, ext = read_img(page.path)
                     if cfg.enable_image_pipeline:
-                        data, ext = image_pipeline(data, ext)
-                    epub.add_comic_page(data, ext, chapter.title, page.title,
-                                        nav_label=(chapter.title if index == 0 else None))
+                        try:
+                            data, ext = image_pipeline(data, ext)
+                            epub.add_comic_page(data, ext, chapter.title, page.title,
+                                                nav_label=(chapter.title if index == 0 else None))
+                        except UserWarning as e:
+                            logger.warning(
+                                str(e) + f': {page.title} in {chapter.title} {comic.title}')
             epub.save()
 
 

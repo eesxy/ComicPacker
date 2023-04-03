@@ -42,7 +42,7 @@ def read_img(path):
         return data, ext
 
 
-def get_jpg_quality(pim: Image.Image) -> int:
+def get_jpg_quality(qdict: dict) -> int:
     """
     Implement quality computation following ImageMagick heuristic algorithm:
     https://github.com/ImageMagick/ImageMagick/blob/7.1.0-57/coders/jpeg.c#L782
@@ -55,7 +55,6 @@ def get_jpg_quality(pim: Image.Image) -> int:
     """
 
     qsum = 0
-    qdict = pim.quantization # type: ignore
     for i, qtable in qdict.items():
         qsum += sum(qtable)
 
