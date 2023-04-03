@@ -6,7 +6,7 @@ from typing import Dict, List
 from ._comicepub import ComicEpub
 from .config import MyConfig
 from .utils import safe_makedirs, setup_logger, read_img
-from .parser import GeneralParser, TachiyomiParser, BcdownParser
+from .parser import GeneralParser, TachiyomiParser, BcdownParser, DmzjBackupParser
 from .split import fixed_split, manual_split
 from .comic_pipeline import ComicFilter, ChapterFilter, ImageDedup, ComicPipeline
 from .image_pipeline import ImagePipeline, ThresholdCrop, DownSample
@@ -19,6 +19,8 @@ def convert(cfg: MyConfig):
         parser = TachiyomiParser
     elif cfg.source_format == 'bcdown':
         parser = BcdownParser
+    elif cfg.source_format == 'dmzjbackup':
+        parser = DmzjBackupParser
     else:
         raise ValueError(f'Invalid source format: {cfg.source_format}')
 

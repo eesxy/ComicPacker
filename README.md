@@ -58,6 +58,7 @@ python main.py
 - `general`: 漫画文件夹的名称即为漫画标题，章节文件夹的名称即为章节标题，每个章节内的图片文件名按文件浏览器名称升序排序(即页面顺序与文件浏览器中一致)，不添加其他元数据
 - `tachiyomi`: 与`general`类似，只是在各个漫画文件夹中包含一个Tachiyomi形式的`.json`格式元数据文件，通过该文件指定漫画标题、作者、分类和简介，文件内容形式见[Tachiyomi文档](https://tachiyomi.org/help/guides/local-manga/#editing-local-manga-details)
 - `bcdown`: 专门适配[bcdown](https://github.com/lihe07/bilibili_comics_downloader)，用户无需手动指定任何信息
+- `dmzjbackup`: 专门适配作者的另一个项目[Dmzj_backup](https://github.com/eesxy/Dmzj_backup)，用户无需手动指定任何信息
 
 兼容大部分下载器的文件组织方式，包括作者的另一个项目[Dmzj_backup](https://github.com/eesxy/Dmzj_backup)~~(打个广告)~~
 
