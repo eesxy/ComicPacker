@@ -29,6 +29,7 @@ class MyConfig:
     min_chapters: int = -1
     min_pages: int = -1
     min_pages_ratio: float = 1.0
+    min_total_pages: int = -1
     # chapter filter
     max_pages: int = -1
     # dedup

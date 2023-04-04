@@ -30,7 +30,7 @@ def convert(cfg: MyConfig):
 
     # comic pipeline
     comic_pipeline = ComicPipeline(
-        ComicFilter(cfg.min_chapters, cfg.min_pages, cfg.min_pages_ratio),
+        ComicFilter(cfg.min_chapters, cfg.min_pages, cfg.min_pages_ratio, cfg.min_total_pages),
         ChapterFilter(cfg.max_pages),
     )
     if cfg.enable_dedup:
