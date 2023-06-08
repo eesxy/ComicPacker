@@ -4,10 +4,10 @@
 
 ## Dependency
 
-需要`python>=3.7`，以及`numpy`,  `jinja2`, `imagededup`, `natsort`, `tqdm`库
+需要`python>=3.7`，以及`numpy`,  `jinja2`, `imagededup`, `natsort`库
 
 ```bash
-pip install numpy jinja2 imagededup natsort tqdm
+pip install numpy jinja2 imagededup natsort
 ```
 
 ## 基本用法

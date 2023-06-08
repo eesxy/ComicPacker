@@ -22,6 +22,10 @@ output_path = "./epubs"
 # bcdown: 文件名或文件夹名可以任意命名, 由各文件夹中的.toml文件确定漫画, 章节, 页面的标题, 适配bcdown
 source_format = "general"
 
+### 输出格式
+# 可选: epub, cbz
+output_format = "epub"
+
 [epub]
 ### 视图尺寸
 # 没什么用, viewbox会自动适应, 且不会造成图片拉伸; 对于极少数不指定页面大小的阅读器可能有效

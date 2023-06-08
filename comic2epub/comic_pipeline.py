@@ -1,6 +1,5 @@
 import logging
 from abc import abstractmethod
-from tqdm import tqdm
 from typing import Dict
 from imagededup.methods import PHash, DHash, WHash, AHash
 from .comic import Comic, Chapter, Page
@@ -9,6 +8,12 @@ from .comic import Comic, Chapter, Page
 class BaseFilter:
     @abstractmethod
     def __call__(self, comic: Comic) -> bool:
+        raise NotImplementedError
+    
+
+class BaseHandler:
+    @abstractmethod
+    def __call__(self, comic: Comic) -> Comic:
         raise NotImplementedError
 
 
@@ -62,7 +67,8 @@ class ChapterFilter(BaseFilter):
         return True
 
 
-class ImageDedup(BaseFilter):
+# multiprocessing
+class ImageDedup(BaseHandler):
     def __init__(self, method: str, logger: logging.Logger) -> None:
         if method == 'phash':
             self.image_hash = PHash(verbose=False)
@@ -74,13 +80,11 @@ class ImageDedup(BaseFilter):
             self.image_hash = AHash(verbose=False)
         else:
             raise ValueError(f'Invalid hash method {method}')
-        self.logger = logger.getChild('dedup')
 
     def __call__(self, comic):
         hash_dict: Dict[str, int] = {}
-        self.logger.info(f'Deduping {comic.title}')
-        for chapter in tqdm(comic.chapters, position=0, desc='chapters', leave=False):
-            for page in tqdm(chapter.pages, position=1, desc='pages   ', leave=False):
+        for chapter in comic.chapters:
+            for page in chapter.pages:
                 page.hash_code = self.image_hash.encode_image(page.path)
                 if page.hash_code not in hash_dict:
                     hash_dict[page.hash_code] = 1
@@ -102,10 +106,10 @@ class ImageDedup(BaseFilter):
                     page_list.append(page)
             chapter.pages = page_list
         comic.chapters.append(copyright_chapter)
-        return True
+        return comic
 
 
-class ComicPipeline:
+class ComicFilterPipeline:
     def __init__(self, *filters: BaseFilter) -> None:
         self.filters = list(filters)
 
@@ -117,3 +121,16 @@ class ComicPipeline:
             if filter(comic) is False:
                 return False
         return True
+
+
+class ComicProcessPipeline:
+    def __init__(self, *handlers: BaseHandler) -> None:
+        self.handlers = list(handlers)
+
+    def append(self, handler: BaseHandler):
+        self.handlers.append(handler)
+
+    def __call__(self, comic: Comic) -> bool:
+        for handler in self.handlers:
+            comic = handler(comic)
+        return comic
