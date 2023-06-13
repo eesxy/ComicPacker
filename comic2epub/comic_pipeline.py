@@ -9,7 +9,7 @@ class BaseFilter:
     @abstractmethod
     def __call__(self, comic: Comic) -> bool:
         raise NotImplementedError
-    
+
 
 class BaseHandler:
     @abstractmethod

@@ -4,6 +4,7 @@ import natsort
 from typing import Dict, List
 from multiprocessing import Pool
 from ._comicepub import ComicEpub
+from .comiccbz import ComicCbz
 from .config import MyConfig
 from .comic import Comic
 from .utils import safe_makedirs, setup_logger, read_img
@@ -17,7 +18,7 @@ def pack_epub(
     filename: str,
     comic: Comic,
     comic_processing: ComicFilter,
-    image_pipeline:ImagePipeline,
+    image_pipeline: ImagePipeline,
     cfg: MyConfig,
 ):
     comic = comic_processing(comic)
@@ -36,14 +37,50 @@ def pack_epub(
         if cfg.enable_image_pipeline:
             data, ext = image_pipeline(data, ext)
         epub.add_comic_page(data, ext, page='cover', cover=True)
-    for chapter in comic.chapters:
-        for index, page in enumerate(chapter.pages):
+    for chapter_index, chapter in enumerate(comic.chapters):
+        for page_index, page in enumerate(chapter.pages):
             data, ext = read_img(page.path)
             if cfg.enable_image_pipeline:
                 data, ext = image_pipeline(data, ext)
-            epub.add_comic_page(data, ext, chapter.title, page.title,
-                                nav_label=(chapter.title if index == 0 else None))
+            epub.add_comic_page(data, ext,
+                                cfg.chapter_format.format(title=chapter.title, index=chapter_index),
+                                cfg.page_format.format(title=page.title, index=page_index),
+                                nav_label=(chapter.title if page_index == 0 else None))
     epub.save()
+    return os.path.split(filename)[1]
+
+
+def pack_cbz(
+    filename: str,
+    comic: Comic,
+    comic_processing: ComicFilter,
+    image_pipeline: ImagePipeline,
+    cfg: MyConfig,
+):
+    comic = comic_processing(comic)
+    cbz = ComicCbz(
+        filename,
+        title=comic.title,
+        writer=(None if (comic.authors is None) else ','.join(comic.authors)),
+        publisher=comic.publisher,
+        genre=(None if (comic.subjects is None) else ','.join(comic.subjects)),
+        summary=comic.description,
+    )
+    if comic.cover_path is not None:
+        data, ext = read_img(comic.cover_path)
+        if cfg.enable_image_pipeline:
+            data, ext = image_pipeline(data, ext)
+        cbz.add_comic_page(data, ext, '000-cover', 'cover')
+    for chapter_index, chapter in enumerate(comic.chapters):
+        for page_index, page in enumerate(chapter.pages):
+            data, ext = read_img(page.path)
+            if cfg.enable_image_pipeline:
+                data, ext = image_pipeline(data, ext)
+            cbz.add_comic_page(data, ext,
+                               cfg.chapter_format.format(title=chapter.title, index=chapter_index),
+                               cfg.page_format.format(title=page.title, index=page_index),
+                               nav_label=(chapter.title if page_index == 0 else None))
+    cbz.save()
     return os.path.split(filename)[1]
 
 
@@ -129,7 +166,12 @@ def convert(cfg: MyConfig):
             if not comic_filter(comic): continue
             # logger.info(f'Packing {os.path.split(filename)[1]}')
             if cfg.output_format == 'epub':
-                pool.apply_async(pack_epub, (filename, comic, comic_processing, image_pipeline, cfg), callback=lambda x: logger.info(f'Packed {x}'))
+                pool.apply_async(pack_epub,
+                                 (filename, comic, comic_processing, image_pipeline, cfg),
+                                 callback=lambda x: logger.info(f'Packed {x}'))
+            elif cfg.output_format == 'cbz':
+                pool.apply_async(pack_cbz, (filename, comic, comic_processing, image_pipeline, cfg),
+                                 callback=lambda x: logger.info(f'Packed {x}'))
             else:
                 raise ValueError('Invalid output format ' + cfg.output_format)
 

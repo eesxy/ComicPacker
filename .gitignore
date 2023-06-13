@@ -135,5 +135,6 @@ dmypy.json
 *.jpeg
 *.png
 *.epub
+*.cbz
 *.json
 my*.toml

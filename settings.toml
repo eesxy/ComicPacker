@@ -26,6 +26,16 @@ source_format = "general"
 # 可选: epub, cbz
 output_format = "epub"
 
+### 章节标题格式, 是一个format方法可解析的字符串, 可选的参数有:
+# title: 章节标题
+# index: 章节序号
+chapter_format = "{title}"
+
+### 页面标题格式, 是一个format方法可解析的字符串, 可选的参数有:
+# title: 页面标题
+# index: 页面在章节内的序号
+page_format = "{title}"
+
 [epub]
 ### 视图尺寸
 # 没什么用, viewbox会自动适应, 且不会造成图片拉伸; 对于极少数不指定页面大小的阅读器可能有效

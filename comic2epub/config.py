@@ -11,6 +11,8 @@ class MyConfig:
     # format
     source_format: str = "general"
     output_format: str = "epub"
+    chapter_format: str = r"{title}"
+    page_format: str = r"{title}"
     # epub
     view_height: int = 1200
     view_width: int = 848
