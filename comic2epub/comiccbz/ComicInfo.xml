@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ComicInfo>
+    <Title>{{ title }}</Title>
+    <LanguageISO>{{ language }}</LanguageISO>
+    {% if writer is not none -%}
+    <Writer>{{ writer }}</Writer>
+    {%- endif %}{% if publisher is not none -%}
+    <Publisher>{{ publisher }}</Publisher>
+    {%- endif %}{% if genre is not none -%}
+    <Genre>{{ genre }}</Genre>
+    {%- endif %}{% if summary is not none -%}
+    <Summary>{{ summary }}</Summary>
+    {%- endif %}
+    {% if pages is not none -%}
+    <Pages>
+        {% for page in pages -%}
+        <Page Image="{{ page.image }}" Bookmark="{{ page.bookmark }}"/>
+        {% endfor %}
+    </Pages>
+    {%- endif %}
+</ComicInfo>
