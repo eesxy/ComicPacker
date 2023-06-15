@@ -108,6 +108,12 @@ def callback(x: Tuple[str, List[str]]):
     return
 
 
+def errback(e: BaseException):
+    logger = logging.getLogger('main')
+    logger.error(str(e))
+    return
+
+
 def convert(cfg: MyConfig):
     if cfg.source_format == 'general':
         parser = GeneralParser
@@ -194,10 +200,10 @@ def convert(cfg: MyConfig):
             if cfg.output_format == 'epub':
                 pool.apply_async(pack_epub,
                                  (filename, comic, comic_processing, image_pipeline, cfg),
-                                 callback=callback)
+                                 callback=callback, error_callback=errback)
             elif cfg.output_format == 'cbz':
                 pool.apply_async(pack_cbz, (filename, comic, comic_processing, image_pipeline, cfg),
-                                 callback=callback)
+                                 callback=callback, error_callback=errback)
             else:
                 raise ValueError('Invalid output format ' + cfg.output_format)
 

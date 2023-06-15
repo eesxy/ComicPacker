@@ -40,10 +40,10 @@ class ComicCbz:
         self.pages = None
 
         self.title = safestr(title)
-        self.writer = safestr(writer)
-        self.publisher = safestr(publisher)
-        self.genre = safestr(genre)
-        self.summary = safestr(summary)
+        self.writer = safestr(writer) if writer is not None else None
+        self.publisher = safestr(publisher) if publisher is not None else None
+        self.genre = safestr(genre) if genre is not None else None
+        self.summary = safestr(summary) if summary is not None else None
         self.language = language
 
     def add_comic_page(self, image_data, image_ext, chapter: Optional[str] = None,

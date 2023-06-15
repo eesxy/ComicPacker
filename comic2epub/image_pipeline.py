@@ -86,7 +86,7 @@ class ImagePipeline:
         return img
 
     def convert(self, img: Image.Image):
-        if img.mode in ['RGBA', 'RGBa', 'P']:
+        if img.mode in ['RGBA', 'RGBa', 'P', 'CMYK']:
             img = img.convert('RGB')
         elif img.mode in ['LA', 'La']:
             img = img.convert('L')
