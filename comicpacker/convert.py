@@ -49,7 +49,8 @@ def pack_epub(
                 if cfg.enable_image_pipeline:
                     data, ext = image_pipeline(data, ext)
                 epub.add_comic_page(
-                    data, ext, cfg.chapter_format.format(title=chapter.title, index=chapter_index),
+                    data, ext,
+                    cfg.chapter_format.format(title=chapter.title, index=chapter_index + 1),
                     cfg.page_format.format(title=page.title, index=page_index),
                     nav_label=(chapter.title if page_index == 0 else None))
             except UserWarning as e:
@@ -90,7 +91,8 @@ def pack_cbz(
                 if cfg.enable_image_pipeline:
                     data, ext = image_pipeline(data, ext)
                 cbz.add_comic_page(
-                    data, ext, cfg.chapter_format.format(title=chapter.title, index=chapter_index),
+                    data, ext,
+                    cfg.chapter_format.format(title=chapter.title, index=chapter_index + 1),
                     cfg.page_format.format(title=page.title, index=page_index),
                     nav_label=(chapter.title if page_index == 0 else None))
             except UserWarning as e:
