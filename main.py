@@ -1,6 +1,6 @@
 import argparse
-from comic2epub.convert import convert
-from comic2epub.config import MyConfig
+from comicpacker.convert import convert
+from comicpacker.config import MyConfig
 
 def main():
     parser = argparse.ArgumentParser()
