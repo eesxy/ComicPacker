@@ -33,19 +33,21 @@ class ComicFilter(BaseFilter):
 
     def __call__(self, comic):
         if self.min_chapters != -1 and len(comic.chapters) < self.min_chapters:
-            self.logger.info(f'Too few chapters: {comic.title}')
+            self.logger.info(f'Too few chapters: {comic.title} ({len(comic.chapters)} chapters)')
             return False
         pages_cnt = []
         for chapter in comic.chapters:
             page_num = len(chapter.pages)
             pages_cnt.append(page_num)
         if self.min_total_pages != -1 and sum(pages_cnt) < self.min_total_pages:
-            self.logger.info(f'Too few pages: {comic.title}')
+            self.logger.info(f'Too few pages: {comic.title} ({sum(pages_cnt)} pages)')
             return False
         pages_cnt.sort()
         if self.min_pages_ratio >= 0 and pages_cnt[int(
                 len(pages_cnt) * self.min_pages_ratio)] < self.min_pages:
-            self.logger.info(f'Too many short chapters: {comic.title}')
+            self.logger.info(
+                f'Too many short chapters: {comic.title} ({pages_cnt[int(len(pages_cnt) * self.min_pages_ratio)]}/{len(comic.chapters)} chapters)'
+            )
             return False
         return True
 
