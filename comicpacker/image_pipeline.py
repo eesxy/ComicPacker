@@ -1,9 +1,10 @@
 import logging
 import io
+from typing import Optional
 import numpy as np
 import PIL
 from PIL import Image
-from PIL.JpegImagePlugin import get_sampling
+import pillow_avif
 from abc import abstractmethod
 from .utils import get_jpg_quality
 
@@ -67,11 +68,21 @@ class ImagePipeline:
         self,
         fixed_ext: str = '',
         jpeg_quality: int = -1,
+        avif_quality: int = 85,
+        avif_speed: int = 6,
+        webp_quality: int = 95,
+        webp_method: int = 4,
+        webp_lossless: bool = False,
         png_compression: int = 1,
     ) -> None:
         self.transforms = []
         self.fixed_ext = None if fixed_ext == '' else fixed_ext
         self.jpeg_quality = jpeg_quality
+        self.avif_quality = avif_quality
+        self.avif_speed = avif_speed
+        self.webp_quality = webp_quality
+        self.webp_method = webp_method
+        self.webp_lossless = webp_lossless
         self.png_compression = png_compression
 
     def append(self, transform: BaseTransformer):
@@ -85,15 +96,6 @@ class ImagePipeline:
                 raise UserWarning(e)
         return img
 
-    def convert(self, img: Image.Image):
-        if img.mode in ['RGBA', 'RGBa', 'P', 'CMYK']:
-            img = img.convert('RGB')
-        elif img.mode in ['LA', 'La']:
-            img = img.convert('L')
-        elif img.mode not in ['RGB', 'L']:
-            raise UserWarning(f'Unrecognizable color space {img.mode}')
-        return img
-
     def save_png(self, img: Image.Image):
         new_data = io.BytesIO()
         if self.png_compression == -1:
@@ -102,20 +104,28 @@ class ImagePipeline:
             img.save(new_data, 'PNG', compress_level=self.png_compression)
         return new_data.getvalue(), '.png'
 
-    def save_jpeg_fixed(self, img: Image.Image):
+    def save_jpeg(self, img: Image.Image, quality: Optional[int] = None, keep: bool = False):
         new_data = io.BytesIO()
-        quality = self.jpeg_quality if self.jpeg_quality != -1 else 100
-        img.save(new_data, 'JPEG', quality=quality, optimize=True, subsampling=0)
+        if keep:
+            if quality is None:
+                img.save(new_data, 'JPEG', quality='keep')
+            elif self.jpeg_quality != -1 and quality > self.jpeg_quality:
+                img.save(new_data, 'JPEG', quality=self.jpeg_quality, subsampling='keep')
+        else:
+            quality = self.jpeg_quality if self.jpeg_quality != -1 else 100
+            img.save(new_data, 'JPEG', quality=quality, optimize=True)
         return new_data.getvalue(), '.jpg'
 
-    def save_jpeg(self, img: Image.Image, quality: int, qtables, subsampling: int):
+    def save_avif(self, img: Image.Image):
         new_data = io.BytesIO()
-        if self.jpeg_quality != -1 and quality > self.jpeg_quality:
-            img.save(new_data, 'JPEG', quality=self.jpeg_quality, optimize=True,
-                     subsampling=subsampling)
-        else:
-            img.save(new_data, 'JPEG', qtables=qtables, optimize=True, subsampling=subsampling)
-        return new_data.getvalue(), '.jpg'
+        img.save(new_data, 'AVIF', quality=self.avif_quality, speed=self.avif_speed)
+        return new_data.getvalue(), '.avif'
+
+    def save_webp(self, img: Image.Image):
+        new_data = io.BytesIO()
+        img.save(new_data, 'WEBP', quality=self.webp_quality, method=self.webp_method,
+                 lossless=self.webp_lossless)
+        return new_data.getvalue(), '.webp'
 
     def __call__(self, data: bytes, ext: str):
         try:
@@ -127,26 +137,27 @@ class ImagePipeline:
             raise UserWarning('Truncated image')
         ext = ext.lower()
         try:
-            if ext in ['.jpg', '.jpeg']:
+            if ext in ['.jpg', '.jpeg'] and self.fixed_ext in [None, '.jpg', '.jpeg']:
                 try:
                     qtables = img.quantization  # type: ignore
+                    quality = get_jpg_quality(qtables)
                 except AttributeError:
-                    img = self.transform(img)
-                    img = self.convert(img)
-                    return self.save_jpeg_fixed(img)
-                quality = get_jpg_quality(qtables)
-                subsampling = get_sampling(img)  # type: ignore
+                    qtables, quality = None, None
                 img = self.transform(img)
-                img = self.convert(img)
-                return self.save_jpeg(img, quality, qtables, subsampling)
-            elif self.fixed_ext == '.jpg' or self.fixed_ext == '.jpeg':
-                img = self.transform(img)
-                img = self.convert(img)
-                return self.save_jpeg_fixed(img)
-            elif ext in ['.png'] or self.fixed_ext == '.png':
-                img = self.transform(img)
-                return self.save_png(img)
+                return self.save_jpeg(img, quality, keep=True)
             else:
-                raise NotImplementedError(f'Unsupported format {ext}')
+                if self.fixed_ext is not None:
+                    ext = self.fixed_ext
+                img = self.transform(img)
+                if ext in ['.jpg', '.jpeg']:
+                    return self.save_jpeg(img)
+                elif ext == '.png':
+                    return self.save_png(img)
+                elif ext == '.avif':
+                    return self.save_avif(img)
+                elif ext == '.webp':
+                    return self.save_webp(img)
+                else:
+                    raise NotImplementedError(f'Unsupported format {ext}')
         except UserWarning as e:
             raise UserWarning(e)

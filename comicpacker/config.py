@@ -42,6 +42,11 @@ class MyConfig:
     enable_image_pipeline = False
     fixed_ext = ""
     jpeg_quality = 95
+    avif_quality = 85
+    avif_speed = 6
+    webp_quality = 95
+    webp_method = 4
+    webp_lossless = False
     png_compression = 1
     # crop
     enable_crop: bool = False

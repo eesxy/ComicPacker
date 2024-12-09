@@ -153,7 +153,9 @@ def convert(cfg: MyConfig):
                 manual_replace_cover[dic['title']] = dic['replace_cover']
 
     # image pipeline
-    image_pipeline = ImagePipeline(cfg.fixed_ext, cfg.jpeg_quality, cfg.png_compression)
+    image_pipeline = ImagePipeline(cfg.fixed_ext, cfg.jpeg_quality, cfg.avif_quality,
+                                   cfg.avif_speed, cfg.webp_quality, cfg.webp_method,
+                                   cfg.webp_lossless, cfg.png_compression)
     if cfg.enable_crop:
         image_pipeline.append(ThresholdCrop(cfg.crop_lower_threshold, cfg.crop_upper_threshold))
     if cfg.enable_downsample:
