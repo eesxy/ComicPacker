@@ -9,7 +9,7 @@ from .comiccbz import ComicCbz
 from .config import MyConfig
 from .comic import Comic
 from .utils import safe_makedirs, setup_logger, read_img
-from .parser import GeneralParser, TachiyomiParser, BcdownParser, DmzjBackupParser
+from .parser import GeneralParser, TachiyomiParser, BcdownParser, DmzjBackupParser, ZMHBackupParser
 from .split import fixed_split, manual_split
 from .comic_pipeline import ComicFilter, ChapterFilter, ImageDedup, ComicFilterPipeline, ComicProcessPipeline
 from .image_pipeline import ImagePipeline, ThresholdCrop, DownSample
@@ -125,6 +125,8 @@ def convert(cfg: MyConfig):
         parser = BcdownParser
     elif cfg.source_format == 'dmzjbackup':
         parser = DmzjBackupParser
+    elif cfg.source_format == 'zmhbackup':
+        parser = ZMHBackupParser
     else:
         raise ValueError(f'Invalid source format: {cfg.source_format}')
 
@@ -162,6 +164,8 @@ def convert(cfg: MyConfig):
         image_pipeline.append(DownSample(cfg.screen_height, cfg.screen_width, cfg.interpolation))
 
     pool = Pool()
+
+    logger.info('Start packing')
 
     for comic_folder in natsort.os_sorted(os.listdir(cfg.source_path)):
         path = os.path.join(cfg.source_path, comic_folder)

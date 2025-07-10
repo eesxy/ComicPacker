@@ -21,6 +21,7 @@ output_path = "./epubs"
 #   artist和status字段不使用
 # bcdown: 文件名或文件夹名可以任意命名, 由各文件夹中的.toml文件确定漫画, 章节, 页面的标题, 适配bcdown
 # dmzjbackup: 与tachiyomi类似, 但章节顺序由漫画文件夹中的info.toml指定, 适配作者的另一个仓库Dmzj_backup
+# zmhbackup: 与tachiyomi类似, 但章节顺序和页面顺序由漫画和章节文件夹中的info.toml指定, 适配作者的另一个仓库ZMH_backup
 source_format = "general"
 
 ### 输出格式

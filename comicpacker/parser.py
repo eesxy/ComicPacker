@@ -137,6 +137,73 @@ class DmzjBackupParser(BaseParser):
         return comic
 
 
+class ZMHBackupParser(BaseParser):
+    @classmethod
+    def parse(cls, path):
+        cover_path = None
+        for ext in IMAGE_EXT:
+            if os.path.exists(os.path.join(path, 'cover' + ext)):
+                cover_path = os.path.join(path, 'cover' + ext)
+                break
+        with open(os.path.join(path, 'details.json'), 'r') as f:
+            js = f.read()
+            meta = json.loads(js)
+            comic_title = meta['title']
+            authors = re.split(r',|;', re.sub(r'\s', '', meta['author']))
+            description = meta['description']
+            subjects = set(meta['genre'])
+        meta = toml.load(os.path.join(path, 'info.toml'))
+        chapter_id_list = meta['chapter_id_list']
+        comic = Comic(
+            comic_title,
+            [],
+            authors=authors,
+            subjects=subjects,
+            description=description,
+            cover_path=cover_path,
+        )
+        chapter_index = 1
+        # build chapter_id -> chapter_title mapping
+        chapter_id_to_title = {}
+        for chapter_title in os.listdir(path):
+            chapter_path = os.path.join(path, chapter_title)
+            if not os.path.isdir(chapter_path): continue
+            meta_path = os.path.join(chapter_path, 'meta.toml')
+            if not os.path.exists(meta_path):
+                logging.getLogger('main.Parser').warning(
+                    f'missing chapter meta: {chapter_title} in {comic_title}')
+                continue
+            chapter_meta = toml.load(meta_path)
+            chapter_id_to_title[chapter_meta['id']] = chapter_title
+        for chapter_id in chapter_id_list:
+            if chapter_id not in chapter_id_to_title:
+                logging.getLogger('main.Parser').warning(
+                    f'missing chapter {chapter_id} in {comic_title}')
+                continue
+            chapter_title = chapter_id_to_title[chapter_id]
+            chapter_path = os.path.join(path, chapter_title)
+            meta_path = os.path.join(chapter_path, 'meta.toml')
+            chapter_meta = toml.load(meta_path)
+            page_list = chapter_meta['img_list']
+            chapter = Chapter(chapter_index, chapter_title, [])
+            page_index = 1
+            for page_file in page_list:
+                page_path = os.path.join(chapter_path, page_file)
+                if not os.path.exists(page_path):
+                    logging.getLogger('main.Parser').warning(
+                        f'missing page {page_file} in chapter {chapter_title} of {comic_title}')
+                    continue
+                page_title, ext = os.path.splitext(page_file)
+                if ext not in IMAGE_EXT: continue
+                page = Page(page_index, page_title, page_path)
+                chapter.pages.append(page)
+                page_index += 1
+            comic.chapters.append(chapter)
+            chapter_index += 1
+        return comic
+        
+
+
 class BcdownParser(BaseParser):
     @classmethod
     def parse(cls, path):
