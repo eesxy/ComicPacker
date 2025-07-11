@@ -10,6 +10,7 @@ class MyConfig:
     source_path: str = './raw'
     # format
     source_format: str = "general"
+    secondary_source_format: str = ""
     output_format: str = "epub"
     chapter_format: str = r"{title}"
     page_format: str = r"{title}"

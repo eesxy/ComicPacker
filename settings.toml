@@ -24,6 +24,10 @@ output_path = "./epubs"
 # zmhbackup: 与tachiyomi类似, 但章节顺序和页面顺序由漫画和章节文件夹中的info.toml指定, 适配作者的另一个仓库ZMH_backup
 source_format = "general"
 
+### 次要源格式
+# 如果主源格式解析失败, 则尝试使用次要源格式解析
+secondary_source_format = ""
+
 ### 输出格式
 # 可选: epub, cbz
 output_format = "epub"

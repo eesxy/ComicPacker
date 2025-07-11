@@ -56,6 +56,7 @@ class TachiyomiParser(BaseParser):
         authors = None
         subjects = None
         description = None
+        flag = False
         for file in os.listdir(path):
             if os.path.splitext(file)[1] != '.json': continue
             with open(os.path.join(path, file), 'r') as f:
@@ -65,6 +66,11 @@ class TachiyomiParser(BaseParser):
                 if 'author' in meta: authors = re.split(r',|;', meta['author'])
                 if 'description' in meta: description = meta['description']
                 if 'genre' in meta: subjects = set(meta['genre'])
+            flag = True
+            break
+        if not flag:
+            raise UserWarning(
+                f'missing metadata in {comic_title}, please use GeneralParser instead')
         comic = Comic(
             comic_title,
             [],
@@ -99,6 +105,8 @@ class DmzjBackupParser(BaseParser):
             if os.path.exists(os.path.join(path, 'cover' + ext)):
                 cover_path = os.path.join(path, 'cover' + ext)
                 break
+        if not os.path.exists(os.path.join(path, 'details.json')):
+            raise UserWarning(f'missing details.json in {path}, please use GeneralParser instead')
         with open(os.path.join(path, 'details.json'), 'r') as f:
             js = f.read()
             meta = json.loads(js)
@@ -106,6 +114,9 @@ class DmzjBackupParser(BaseParser):
             authors = re.split(r',|;', re.sub(r'\s', '', meta['author']))
             description = meta['description']
             subjects = set(meta['genre'])
+        if 'info.toml' not in os.listdir(path):
+            raise UserWarning(
+                f'missing info.toml in {comic_title}, please use TachiyomiParser instead')
         meta = toml.load(os.path.join(path, 'info.toml'))
         chapter_list = meta['chapter_list']
         comic = Comic(
@@ -145,6 +156,8 @@ class ZMHBackupParser(BaseParser):
             if os.path.exists(os.path.join(path, 'cover' + ext)):
                 cover_path = os.path.join(path, 'cover' + ext)
                 break
+        if not os.path.exists(os.path.join(path, 'details.json')):
+            raise UserWarning(f'missing details.json in {path}, please use GeneralParser instead')
         with open(os.path.join(path, 'details.json'), 'r') as f:
             js = f.read()
             meta = json.loads(js)
@@ -152,7 +165,14 @@ class ZMHBackupParser(BaseParser):
             authors = re.split(r',|;', re.sub(r'\s', '', meta['author']))
             description = meta['description']
             subjects = set(meta['genre'])
+        if 'info.toml' not in os.listdir(path):
+            raise UserWarning(
+                f'missing info.toml in {comic_title}, please use TachiyomiParser instead')
         meta = toml.load(os.path.join(path, 'info.toml'))
+        if 'chapter_id_list' not in meta:
+            raise UserWarning(
+                f'missing chapter_id_list in info.toml of {comic_title}, please use DmzjBackupParser instead'
+            )
         chapter_id_list = meta['chapter_id_list']
         comic = Comic(
             comic_title,
@@ -168,13 +188,13 @@ class ZMHBackupParser(BaseParser):
         for chapter_title in os.listdir(path):
             chapter_path = os.path.join(path, chapter_title)
             if not os.path.isdir(chapter_path): continue
-            meta_path = os.path.join(chapter_path, 'meta.toml')
+            meta_path = os.path.join(chapter_path, 'info.toml')
             if not os.path.exists(meta_path):
                 logging.getLogger('main.Parser').warning(
-                    f'missing chapter meta: {chapter_title} in {comic_title}')
+                    f'missing info.toml in chapter {chapter_title} of {comic_title}, skipping')
                 continue
             chapter_meta = toml.load(meta_path)
-            chapter_id_to_title[chapter_meta['id']] = chapter_title
+            chapter_id_to_title[chapter_meta['chapter_id']] = chapter_title
         for chapter_id in chapter_id_list:
             if chapter_id not in chapter_id_to_title:
                 logging.getLogger('main.Parser').warning(
@@ -182,7 +202,7 @@ class ZMHBackupParser(BaseParser):
                 continue
             chapter_title = chapter_id_to_title[chapter_id]
             chapter_path = os.path.join(path, chapter_title)
-            meta_path = os.path.join(chapter_path, 'meta.toml')
+            meta_path = os.path.join(chapter_path, 'info.toml')
             chapter_meta = toml.load(meta_path)
             page_list = chapter_meta['img_list']
             chapter = Chapter(chapter_index, chapter_title, [])
@@ -201,12 +221,13 @@ class ZMHBackupParser(BaseParser):
             comic.chapters.append(chapter)
             chapter_index += 1
         return comic
-        
 
 
 class BcdownParser(BaseParser):
     @classmethod
     def parse(cls, path):
+        if not os.path.exists(os.path.join(path, 'meta.toml')):
+            raise UserWarning(f'missing meta.toml in {path}, please use GeneralParser instead')
         comic_meta = toml.load(os.path.join(path, 'meta.toml'))
         cover_path = None
         for ext in IMAGE_EXT:
@@ -217,12 +238,17 @@ class BcdownParser(BaseParser):
         for chapter_id in os.listdir(path):
             chapter_path = os.path.join(path, chapter_id)
             if not os.path.isdir(chapter_path): continue
+            if not os.path.exists(os.path.join(chapter_path, 'meta.toml')):
+                raise UserWarning(
+                    f'missing meta.toml in chapter {chapter_id} of {comic.title}, please use GeneralParser instead'
+                )
             chapter_meta = toml.load(os.path.join(chapter_path, 'meta.toml'))
             chapter = Chapter(chapter_meta['ord'], chapter_meta['title'], [])
             for index, page_file in enumerate(chapter_meta['paths']):
                 page_file = os.path.split(page_file)[1]
                 page_path = os.path.join(chapter_path, page_file)
                 _, ext = os.path.splitext(page_file)
+                if ext not in IMAGE_EXT: continue
                 page = Page(index, '{:04d}'.format(index), page_path)
                 chapter.pages.append(page)
             comic.chapters.append(chapter)

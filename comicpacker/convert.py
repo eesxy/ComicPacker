@@ -130,6 +130,21 @@ def convert(cfg: MyConfig):
     else:
         raise ValueError(f'Invalid source format: {cfg.source_format}')
 
+    if cfg.secondary_source_format == '':
+        secondary_parser = None
+    elif cfg.secondary_source_format == 'general':
+        secondary_parser = GeneralParser
+    elif cfg.secondary_source_format == 'tachiyomi':
+        secondary_parser = TachiyomiParser
+    elif cfg.secondary_source_format == 'bcdown':
+        secondary_parser = BcdownParser
+    elif cfg.secondary_source_format == 'dmzjbackup':
+        secondary_parser = DmzjBackupParser
+    elif cfg.secondary_source_format == 'zmhbackup':
+        secondary_parser = ZMHBackupParser
+    else:
+        raise ValueError(f'Invalid secondary source format: {cfg.secondary_source_format}')
+
     safe_makedirs(cfg.logging_path)
     safe_makedirs(cfg.output_path)
     logger = setup_logger(cfg.logging_path)
@@ -171,7 +186,23 @@ def convert(cfg: MyConfig):
         path = os.path.join(cfg.source_path, comic_folder)
         if not os.path.isdir(path): continue
         # parse
-        comic = parser.parse(path)
+        try:
+            comic = parser.parse(path)
+        except UserWarning as e:
+            logger.warning(f'Primary source format parsing failed: {e}')
+            if secondary_parser is None:
+                logger.error('No secondary source format provided, skipping')
+                continue
+            else:
+                logger.warning('Switching to secondary source format')
+                try:
+                    comic = secondary_parser.parse(path)
+                except Exception as e:
+                    logger.error(f'Secondary source format parsing failed: {e}, path: {path}')
+                    continue
+        except Exception as e:
+            logger.error(f'Parsing failed: {e}, path: {path}')
+            continue
         # split
         if comic.title in manual_breakpoints:
             comics = manual_split(

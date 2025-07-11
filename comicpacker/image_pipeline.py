@@ -7,6 +7,7 @@ from PIL import Image
 import pillow_avif
 from abc import abstractmethod
 from .utils import get_jpg_quality
+from PIL.JpegImagePlugin import get_sampling
 
 
 class BaseTransformer:
@@ -96,6 +97,15 @@ class ImagePipeline:
                 raise UserWarning(e)
         return img
 
+    def convert(self, img: Image.Image):
+        if img.mode in ['RGBA', 'RGBa', 'P', 'CMYK']:
+            img = img.convert('RGB')
+        elif img.mode in ['LA', 'La']:
+            img = img.convert('L')
+        elif img.mode not in ['RGB', 'L']:
+            raise UserWarning(f'Unrecognizable color space {img.mode}')
+        return img
+
     def save_png(self, img: Image.Image):
         new_data = io.BytesIO()
         if self.png_compression == -1:
@@ -104,16 +114,21 @@ class ImagePipeline:
             img.save(new_data, 'PNG', compress_level=self.png_compression)
         return new_data.getvalue(), '.png'
 
-    def save_jpeg(self, img: Image.Image, quality: Optional[int] = None, keep: bool = False):
+    def save_jpeg(self, img: Image.Image, quality: Optional[int] = None, qtables=None,
+                  subsampling=None):
         new_data = io.BytesIO()
-        if keep:
-            if quality is None:
-                img.save(new_data, 'JPEG', quality='keep')
-            elif self.jpeg_quality != -1 and quality > self.jpeg_quality:
-                img.save(new_data, 'JPEG', quality=self.jpeg_quality, subsampling='keep')
+        if self.jpeg_quality != -1 and (quality is None or quality > self.jpeg_quality):
+            img.save(new_data, 'JPEG', quality=self.jpeg_quality, optimize=True)
+        elif self.jpeg_quality == -1 and quality is None:
+            img.save(new_data, 'JPEG', quality=100, optimize=True)
         else:
-            quality = self.jpeg_quality if self.jpeg_quality != -1 else 100
-            img.save(new_data, 'JPEG', quality=quality, optimize=True)
+            img.save(new_data, 'JPEG', qtables=qtables, optimize=True, subsampling=subsampling)
+        return new_data.getvalue(), '.jpg'
+
+    def save_jpeg_fixed(self, img: Image.Image):
+        new_data = io.BytesIO()
+        quality = self.jpeg_quality if self.jpeg_quality != -1 else 100
+        img.save(new_data, 'JPEG', quality=quality, optimize=True, subsampling=0)
         return new_data.getvalue(), '.jpg'
 
     def save_avif(self, img: Image.Image):
@@ -141,16 +156,19 @@ class ImagePipeline:
                 try:
                     qtables = img.quantization  # type: ignore
                     quality = get_jpg_quality(qtables)
+                    subsampling = get_sampling(img)
                 except AttributeError:
-                    qtables, quality = None, None
+                    qtables, quality, subsampling = None, None, None
                 img = self.transform(img)
-                return self.save_jpeg(img, quality, keep=True)
+                img = self.convert(img)
+                return self.save_jpeg(img, quality, qtables, subsampling)
             else:
                 if self.fixed_ext is not None:
                     ext = self.fixed_ext
                 img = self.transform(img)
                 if ext in ['.jpg', '.jpeg']:
-                    return self.save_jpeg(img)
+                    img = self.convert(img)
+                    return self.save_jpeg_fixed(img)
                 elif ext == '.png':
                     return self.save_png(img)
                 elif ext == '.avif':
